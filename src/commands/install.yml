@@ -1,0 +1,61 @@
+description: "Install the AWS CLI via Pip if not already installed."
+
+parameters:
+  version:
+    description: |
+      Select a specific version of the AWS v2 CLI. By default the latest version will be used.
+      This value is ignored on Alpine, and the default version on the repositories is installed.
+    default: latest
+    type: string
+  override_installed:
+    type: boolean
+    default: false
+    description: |
+      By default, if the AWS CLI is detected on the system, the install will be skipped.
+      Enable this to override the installed version and install your specified version.
+  disable_aws_pager:
+    description: |
+      Set to false to skip forceful disabling of all AWS CLI output paging.
+    type: boolean
+    default: true
+  install_dir:
+    type: string
+    default: /usr/local/aws-cli
+    description: |
+      Specify the installation directory of AWS CLI. Defaults to /usr/local/aws-cli
+  binary_dir:
+    type: string
+    default: /usr/local/bin
+    description: |
+      The main aws program in the install directory is symbolically linked to the file aws in the specified path. Defaults to /usr/local/bin
+  use_brew:
+    type: boolean
+    default: false
+    description: |
+      Set to true if you want to use the Homebrew CLI to install the awscli. Only compatible with the macOS executor. Defaults to false.
+      When using brew, only the brew version is available.
+  when:
+    description: |
+      Allows script to run on a specific condition of a workflow.
+      The default is 'on_success', means the script will run only if all previous steps were successful
+      'on_fail' means the script will run if any previous step fails
+      'always' means it will run regardless of the success or failure of previous steps in the workflow
+    type: enum
+    enum: ["on_success", "on_fail", "always"]
+    default: "on_success"
+steps:
+  - run:
+      name: Install AWS CLI - <<parameters.version>>
+      when: <<parameters.when>>
+      environment:
+        AWS_CLI_STR_AWS_CLI_VERSION: <<parameters.version>>
+        AWS_CLI_BOOL_DISABLE_PAGER: <<parameters.disable_aws_pager>>
+        AWS_CLI_BOOL_OVERRIDE: <<parameters.override_installed>>
+        AWS_CLI_EVAL_INSTALL_DIR: <<parameters.install_dir>>
+        AWS_CLI_EVAL_BINARY_DIR: <<parameters.binary_dir>>
+        SCRIPT_INSTALL_WINDOWS: << include(scripts/windows/install.sh) >>
+        SCRIPT_INSTALL_LINUX: << include(scripts/linux/install.sh) >>
+        SCRIPT_INSTALL_MACOS: << include(scripts/macos/install.sh) >>
+        USE_BREW: <<parameters.use_brew>>
+        SCRIPT_UTILS: << include(scripts/utils.sh) >>
+      command: <<include(scripts/install.sh)>>
